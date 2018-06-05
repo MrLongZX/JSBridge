@@ -23,41 +23,49 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    // Do any additional setup after loading the view.
+    
     self.title = @"UIWebView--WebViewJavascriptBridgeL";
     self.view.backgroundColor = [UIColor whiteColor];
     
-    UIBarButtonItem *rightItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemReply target:self action:@selector(rightClick)];
-    self.navigationItem.rightBarButtonItem = rightItem;
+    // 初始化WebView 创建交互方式
+    [self initWebView];
     
-    self.webView = [[UIWebView alloc] initWithFrame:self.view.frame];
-    [self.view addSubview:self.webView];
-    
-    NSURL *htmlURL = [[NSBundle mainBundle] URLForResource:@"index.html" withExtension:nil];
-    NSURLRequest *request = [NSURLRequest requestWithURL:htmlURL];
-    
-    // UIWebView 滚动的比较慢，这里设置为正常速度
-    self.webView.scrollView.decelerationRate = UIScrollViewDecelerationRateNormal;
-    [self.webView loadRequest:request];
-    
-    _webViewBridge = [WebViewJavascriptBridge bridgeForWebView:self.webView];
-    [_webViewBridge setWebViewDelegate:self];
+    // 初始化导航右按钮
+    [self initRightItem];
     
     // 添加JS 要调用的Native 功能
     [self registerNativeFunctions];
 }
 
-- (void)dealloc
+#pragma mark - 初始化WebView 创建交互方式
+- (void)initWebView
 {
-    NSLog(@"%s",__func__);
+    self.webView = [[UIWebView alloc] initWithFrame:self.view.frame];
+    // UIWebView 滚动的比较慢，这里设置为正常速度
+    self.webView.scrollView.decelerationRate = UIScrollViewDecelerationRateNormal;
+    [self.view addSubview:self.webView];
+    
+    NSURL *htmlURL = [[NSBundle mainBundle] URLForResource:@"index.html" withExtension:nil];
+    NSURLRequest *request = [NSURLRequest requestWithURL:htmlURL];
+    [self.webView loadRequest:request];
+    
+    _webViewBridge = [WebViewJavascriptBridge bridgeForWebView:self.webView];
+    [_webViewBridge setWebViewDelegate:self];
+}
+
+#pragma mark - 初始化导航右按钮
+- (void)initRightItem
+{
+    UIBarButtonItem *rightItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemReply target:self action:@selector(rightClick)];
+    self.navigationItem.rightBarButtonItem = rightItem;
 }
 
 - (void)rightClick
 {
-//    // 如果不需要参数，不需要回调，使用这个
-//    [_webViewBridge callHandler:@"testJSFunction"];
-//    // 如果需要参数，不需要回调，使用这个
-//    [_webViewBridge callHandler:@"testJSFunction" data:@"一个字符串"];
+    // 如果不需要参数，不需要回调，使用这个
+    // [_webViewBridge callHandler:@"testJSFunction"];
+    // 如果需要参数，不需要回调，使用这个
+    // [_webViewBridge callHandler:@"testJSFunction" data:@"一个字符串"];
     // 如果既需要参数，又需要回调，使用这个
     [_webViewBridge callHandler:@"testJSFunction" data:@"一个字符串" responseCallback:^(id responseData) {
         NSLog(@"调用完JS后的回调：%@",responseData);
@@ -78,17 +86,6 @@
     [self registPayFunction];
     
     [self registShakeFunction];
-}
-
-- (void)registLocationFunction
-{
-    [_webViewBridge registerHandler:@"locationClick" handler:^(id data, WVJBResponseCallback responseCallback) {
-        // 获取位置信息
-        
-        NSString *location = @"广东省深圳市南山区学府路XXXX号";
-        // 将结果返回给js
-        responseCallback(location);
-    }];
 }
 
 - (void)registScanFunction
@@ -117,6 +114,17 @@
     }];
 }
 
+- (void)registLocationFunction
+{
+    [_webViewBridge registerHandler:@"locationClick" handler:^(id data, WVJBResponseCallback responseCallback) {
+        // 获取位置信息
+        
+        NSString *location = @"广东省深圳市南山区学府路XXXX号";
+        // 将结果返回给js
+        responseCallback(location);
+    }];
+}
+
 - (void)regitstBGColorFunction
 {
     __weak typeof(self) weakSelf = self;
@@ -138,7 +146,7 @@
     [_webViewBridge registerHandler:@"payClick" handler:^(id data, WVJBResponseCallback responseCallback) {
         // data 的类型与 JS中传的参数有关
         NSDictionary *tempDic = data;
-
+        
         NSString *orderNo = [tempDic objectForKey:@"order_no"];
         long long amount = [[tempDic objectForKey:@"amount"] longLongValue];
         NSString *subject = [tempDic objectForKey:@"subject"];
@@ -166,5 +174,9 @@
     }];
 }
 
+- (void)dealloc
+{
+    NSLog(@"%s",__func__);
+}
 
 @end

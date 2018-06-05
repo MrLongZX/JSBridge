@@ -17,7 +17,6 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.title = @"JS调用WKWebView";
-    // Do any additional setup after loading the view from its nib.
     
     WKWebViewConfiguration *config = [[WKWebViewConfiguration alloc] init];
     config.userContentController = [[WKUserContentController alloc] init];
@@ -29,15 +28,24 @@
     [config.userContentController addScriptMessageHandler:delegateController name:@"Native"];
     //本人喜欢只定义一个MessageHandler协议 当然可以定义其他MessageHandler协议
     [config.userContentController addScriptMessageHandler:delegateController name:@"Pay"];
-
+    
     self.myWebView = [[WKWebView alloc] initWithFrame:self.view.bounds configuration:config];
     self.myWebView.UIDelegate = self;
     [self.view addSubview:self.myWebView];
     [self loadTouched:nil];
 }
 
-- (IBAction)loadTouched:(id)sender {
+- (IBAction)loadTouched:(id)sender
+{
     [self loadHtml:@"JSWKWebView"];
+}
+
+-(void)loadHtml:(NSString*)name
+{
+    NSString *filePath = [[NSBundle mainBundle]pathForResource:name ofType:@"html"];
+    NSURL *url = [NSURL fileURLWithPath:filePath];
+    NSURLRequest *request = [NSURLRequest requestWithURL:url];
+    [self.myWebView loadRequest:request];
 }
 
 #pragma mark - WKScriptMessageHandler
@@ -50,7 +58,7 @@
     NSLog(@"MessageHandler Name:%@", message.name);
     NSLog(@"MessageHandler Body:%@", message.body);
     NSLog(@"MessageHandler Function:%@",func);
-
+    
     //本人喜欢只定义一个MessageHandler协议 当然可以定义其他MessageHandler协议
     if ([message.name isEqualToString:@"Native"]){
         NSDictionary *parameters = [bodyParam objectForKey:@"parameters"];
@@ -74,7 +82,7 @@
         }else if([func isEqualToString:@"testFunc"]){//调用本地函数4
             NSLog(@"testFunc");
         }
-     
+        
     }else if ([message.name isEqualToString:@"Pay"]) {
         //如果是自己定义的协议, 再截取协议中的方法和参数, 判断无误后在这里进行逻辑处理
         NSLog(@"Pay");
@@ -82,16 +90,6 @@
         //........
         NSLog(@"dosomething");
     }
-}
-
--(void)loadHtml:(NSString*)name{
-    NSString *filePath = [[NSBundle mainBundle]pathForResource:name ofType:@"html"];
-    
-    NSURL *url = [NSURL fileURLWithPath:filePath];
-    
-    NSURLRequest *request = [NSURLRequest requestWithURL:url];
-    
-    [self.myWebView loadRequest:request];
 }
 
 -(void)showMessage:(NSString *)title message:(NSString *)message;
@@ -113,9 +111,10 @@
 - (void)webViewDidClose:(WKWebView *)webView {
     NSLog(@"%s", __FUNCTION__);
 }
-//uiwebview 中这个方法是私有方法 通过category可以拦截alert
-- (void)webView:(WKWebView *)webView runJavaScriptAlertPanelWithMessage:(NSString *)message initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(void))completionHandler {
 
+// uiwebview 中这个方法是私有方法 拦截alert警告框，还有输入框、确认框
+- (void)webView:(WKWebView *)webView runJavaScriptAlertPanelWithMessage:(NSString *)message initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(void))completionHandler {
+    
     NSLog(@"%s", __FUNCTION__);
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"提示" message:message preferredStyle:UIAlertControllerStyleAlert];
     [alert addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
